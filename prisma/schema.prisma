@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Rol de Usuario
+enum Rol {
+  ADMIN
+  CLIENTE
+  CHOFER
+}
+
+// 2. Modelo Usuario
+model Usuario {
+  idUsuario String   @id @default(uuid())
+  usuario   String   @unique
+  password  String
+  nombre    String
+  apellido  String
+  email     String   @unique
+  telefono  String?
+  rol       Rol      @default(CLIENTE)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 3. Modelo Ruta (Para el CRUD simple requerido)
+model Ruta {
+  idRuta    String   @id @default(uuid())
+  nombre    String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

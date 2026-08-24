@@ -2,7 +2,38 @@ import { Request, Response } from 'express';
 import { UsuarioService } from '../services/usuario.service.js';
 
 export class UsuarioController {
-  static async obtenerTodos(req: Request, res: Response) {
+    static async actualizar(req: Request, res: Response) {
+      try {
+        const id = req.params.id as string;
+        const { nombre, email, password } = req.body;
+
+        const usuarioActualizado = await UsuarioService.actualizar(id, { nombre, email, password });
+        
+        res.status(200).json(usuarioActualizado);
+      } catch (error) {
+        console.error(error);
+        res.status(400).json({ 
+          error: 'Error al actualizar el usuario (verificá que el ID exista o que el email no esté duplicado)' 
+        });
+      }
+    }
+    static async obtenerPorId(req: Request, res: Response) {
+      try {
+        const id = req.params.id as string;
+        const usuario = await UsuarioService.obtenerPorId(id);
+
+        if (!usuario) {
+          return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.status(200).json(usuario);
+      } catch (error) {
+        console.error(error);
+        res.status(400).json({ error: 'Error al buscar el usuario' });
+      }
+    }
+
+    static async obtenerTodos(req: Request, res: Response) {
     try {
       const usuarios = await UsuarioService.obtenerTodos();
       res.json(usuarios);

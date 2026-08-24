@@ -7,14 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. Rol de Usuario
+// Rol de Usuario
 enum Rol {
   ADMIN
   CLIENTE
-  CHOFER
 }
 
-// 2. Modelo Usuario
+// Modelo Usuario
 model Usuario {
   idUsuario String   @id @default(uuid())
   usuario   String   @unique
@@ -29,11 +28,32 @@ model Usuario {
   updatedAt DateTime @updatedAt
 }
 
-// 3. Modelo Ruta (Para el CRUD simple requerido)
+// Modelo Ruta (Para el CRUD simple requerido)
 model Ruta {
   idRuta    String   @id @default(uuid())
   nombre    String
-  
+  puntos    PuntoRuta[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PuntoRuta {
+  idPuntoRuta String @id @default(uuid())
+  orden       Int
+  idRuta      String
+  ruta        Ruta   @relation(fields: [idRuta], references: [idRuta], onDelete: Cascade)
+  idPunto     String
+  punto       Punto  @relation(fields: [idPunto], references: [idPunto], onDelete: Restrict)
+
+  @@unique([idRuta, idPunto])
+}
+
+model Punto {
+  idPunto   String      @id @default(uuid())
+  direccion String      @unique
+  nombre    String?
+  rutas     PuntoRuta[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }

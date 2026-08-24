@@ -1,22 +1,46 @@
+import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma.js';
 import { Rol } from '@prisma/client';
 
 export class UsuarioService {
-  static async actualizar(idUsuario: string, data: { nombre?: string; email?: string; password?: string }) {
+  static async actualizar(
+    idUsuario: string, 
+    data: { 
+      usuario?: string;
+      nombre?: string;
+      apellido?: string;
+      email?: string;
+      telefono?: string;
+      rol?: Rol;
+      password?: string;
+    }) {
+
+    let hashedPassword = undefined;
+
+    if (data.password) {
+      hashedPassword = await bcrypt.hash(data.password, 10);
+    }
     return await prisma.usuario.update({
       where: { idUsuario }, 
       data: {
+        ...(data.usuario && { usuario: data.usuario }),
         ...(data.nombre && { nombre: data.nombre }),
+        ...(data.apellido && { apellido: data.apellido }),
         ...(data.email && { email: data.email }),
-        ...(data.password && { password: data.password }) // Nota: hashear antes de guardar
+        ...(data.telefono && { telefono: data.telefono }),
+        ...(data.rol && { rol: data.rol }),
+        ...(hashedPassword && { password: hashedPassword }),
       },
       select: {
         idUsuario: true,
+        usuario: true,
         nombre: true,
+        apellido: true,
         email: true,
+        telefono: true,
+        rol: true,
         createdAt: true,
-        updatedAt: true
-        // Excluimos 'password' por seguridad para no retornar el hash
+        updatedAt: true,
       }
     });
   }
@@ -39,6 +63,17 @@ export class UsuarioService {
   static async obtenerPorId(id: string) {
     return await prisma.usuario.findUnique({
       where: { idUsuario: id },
+      select: {
+        idUsuario: true,
+        usuario: true,
+        nombre: true,
+        apellido: true,
+        email: true,
+        telefono: true,
+        rol: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -51,9 +86,17 @@ export class UsuarioService {
     telefono?: string;
     rol?: Rol;
   }) {
-    return await prisma.usuario.create({
-      data: datos,
+    const hashedPassword = await bcrypt.hash(datos.password, 10);
+
+    const nuevoUsuario = await prisma.usuario.create({
+      data: {
+        ...datos,
+        password: hashedPassword,
+      },
     });
+
+    const { password, ...usuarioSinPassword } = nuevoUsuario;
+    return usuarioSinPassword;
   }
 
   static async eliminar(id: string) {

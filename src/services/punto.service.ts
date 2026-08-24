@@ -18,7 +18,14 @@ export class PuntoService {
       data: datos,
     });
   }
-
+    
+  static async actualizar(idPunto: string, data: { nombre?: string; direccion?: string }) {
+    return await prisma.punto.update({
+      where: { idPunto },
+      data
+    });
+  }
+  
   static async eliminar(id: string) {
     return await prisma.punto.delete({
       where: { idPunto: id },

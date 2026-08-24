@@ -2,6 +2,19 @@ import { Request, Response } from 'express';
 import { RutaService } from '../services/ruta.service.js';
 
 export class RutaController {
+  static async actualizar(req: Request, res: Response) {
+    try {
+      const id  = req.params.id as string;
+      const { nombre, puntos } = req.body;
+
+      const rutaActualizada = await RutaService.actualizar(id, { nombre, puntos });
+      res.status(200).json(rutaActualizada);
+    } catch (error) {
+      console.error(error);
+      res.status(400).json({ error: 'Error al actualizar la ruta' });
+    }
+  }
+  
   static async obtenerTodas(req: Request, res: Response) {
     try {
       const rutas = await RutaService.obtenerTodas();

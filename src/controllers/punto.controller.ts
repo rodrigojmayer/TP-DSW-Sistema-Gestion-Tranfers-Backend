@@ -2,6 +2,19 @@ import { Request, Response } from 'express';
 import { PuntoService } from '../services/punto.service.js';
 
 export class PuntoController {
+  static async actualizar(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const { nombre, direccion } = req.body;
+
+      const puntoActualizado = await PuntoService.actualizar(id, { nombre, direccion });
+      res.status(200).json(puntoActualizado);
+    } catch (error) {
+      console.error(error);
+      res.status(400).json({ error: 'Error al actualizar el punto' });
+    }
+  }
+  
   static async obtenerTodos(req: Request, res: Response) {
     try {
       const puntos = await PuntoService.obtenerTodos();

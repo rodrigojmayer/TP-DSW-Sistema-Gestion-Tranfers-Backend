@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { UsuarioController } from '../controllers/usuario.controller.js';
+import { autenticarToken } from '../middlewares/auth.middleware.js';
 
 const router = Router();
+
+// Aplica autenticación a TODAS las rutas de abajo
+router.use(autenticarToken);
 
 router.get('/', UsuarioController.obtenerTodos);
 router.get('/:id', UsuarioController.obtenerPorId);

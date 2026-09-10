@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 // 1. Cargar variables de entorno del .env (para que lea el JWT_SECRET)
 dotenv.config();
@@ -14,6 +15,14 @@ import authRoutes from './routes/auth.routes.js';
 
 const app = express()
 const PORT = process.env["PORT"] || 3000;
+const CLIENT_URL = process.env['CLIENT_URL'] || 'http://localhost:5173';
+
+app.use(cors({
+  origin: CLIENT_URL,
+  credentials: true
+}));
+
+
 app.use(express.json());
 
 // 3. Montar las rutas en la API

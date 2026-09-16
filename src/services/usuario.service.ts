@@ -1,80 +1,30 @@
 import bcrypt from 'bcryptjs';
-import { prisma } from '../lib/prisma.js';
-import { Rol } from '@prisma/client';
+import { wrap, EntityData } from '@mikro-orm/core';
+import { getEM } from '../lib/db.js';
+import { Usuario } from '../entities/Usuario.entity.js';
 
 export class UsuarioService {
-  static async actualizar(
-    idUsuario: string, 
-    data: { 
-      usuario?: string;
-      nombre?: string;
-      apellido?: string;
-      email?: string;
-      telefono?: string;
-      rol?: Rol;
-      password?: string;
-    }) {
-
-    let hashedPassword = undefined;
-
-    if (data.password) {
-      hashedPassword = await bcrypt.hash(data.password, 10);
-    }
-    return await prisma.usuario.update({
-      where: { idUsuario }, 
-      data: {
-        ...(data.usuario && { usuario: data.usuario }),
-        ...(data.nombre && { nombre: data.nombre }),
-        ...(data.apellido && { apellido: data.apellido }),
-        ...(data.email && { email: data.email }),
-        ...(data.telefono && { telefono: data.telefono }),
-        ...(data.rol && { rol: data.rol }),
-        ...(hashedPassword && { password: hashedPassword }),
-      },
-      select: {
-        idUsuario: true,
-        usuario: true,
-        nombre: true,
-        apellido: true,
-        email: true,
-        telefono: true,
-        rol: true,
-        createdAt: true,
-        updatedAt: true,
-      }
-    });
-  }
-  
   static async obtenerTodos() {
-    return await prisma.usuario.findMany({
-      select: {
-        idUsuario: true,
-        usuario: true,
-        nombre: true,
-        apellido: true,
-        email: true,
-        telefono: true,
-        rol: true,
-        createdAt: true,
-      },
+    const em = getEM();
+    const usuarios = await em.find(Usuario, {});
+    
+    // Mapeamos para excluir la contraseña de todos los elementos de la lista
+    return usuarios.map(u => {
+      const { password, ...usuarioSinPassword } = wrap(u).toObject();
+      return usuarioSinPassword;
     });
   }
 
-  static async obtenerPorId(id: string) {
-    return await prisma.usuario.findUnique({
-      where: { idUsuario: id },
-      select: {
-        idUsuario: true,
-        usuario: true,
-        nombre: true,
-        apellido: true,
-        email: true,
-        telefono: true,
-        rol: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+  static async obtenerPorId(idUsuario: string) {
+    const em = getEM();
+    const usuario = await em.findOne(Usuario, { id: idUsuario });
+    
+    if (!usuario) {
+      return null;
+    }
+
+    const { password, ...usuarioSinPassword } = wrap(usuario).toObject();
+    return usuarioSinPassword;
   }
 
   static async crear(datos: {
@@ -84,24 +34,59 @@ export class UsuarioService {
     apellido: string;
     email: string;
     telefono?: string;
-    rol?: Rol;
+    rol?: string;
   }) {
+    const em = getEM();
     const hashedPassword = await bcrypt.hash(datos.password, 10);
 
-    const nuevoUsuario = await prisma.usuario.create({
-      data: {
-        ...datos,
-        password: hashedPassword,
-      },
-    });
+    const nuevoUsuario = em.create(Usuario, {
+      ...datos,
+      password: hashedPassword,
+    } as any);
 
-    const { password, ...usuarioSinPassword } = nuevoUsuario;
+    em.persist(nuevoUsuario);
+    await em.flush();
+
+    const { password, ...usuarioSinPassword } = wrap(nuevoUsuario).toObject();
     return usuarioSinPassword;
   }
 
-  static async eliminar(id: string) {
-    return await prisma.usuario.delete({
-      where: { idUsuario: id },
-    });
+  static async actualizar(
+    idUsuario: string,
+    data: {
+      usuario?: string;
+      nombre?: string;
+      apellido?: string;
+      email?: string;
+      telefono?: string;
+      rol?: string;
+      password?: string;
+    }
+  ) {
+    const em = getEM();
+    const usuario = await em.findOneOrFail(Usuario, { id: idUsuario });
+
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 10);
+    }
+
+    const datosLimpios = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== undefined)
+    );
+
+    em.assign(usuario, datosLimpios as EntityData<Usuario>);
+    await em.flush();
+
+    const { password, ...usuarioSinPassword } = wrap(usuario).toObject();
+    return usuarioSinPassword;
+  }
+
+  static async eliminar(idUsuario: string) {
+    const em = getEM();
+    const usuario = await em.findOneOrFail(Usuario, { id: idUsuario });
+    
+    em.remove(usuario);
+    await em.flush();
+    return true;
   }
 }

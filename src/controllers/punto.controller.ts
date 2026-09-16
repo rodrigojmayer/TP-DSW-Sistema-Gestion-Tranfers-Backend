@@ -5,9 +5,14 @@ export class PuntoController {
   static async actualizar(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const { nombre, direccion } = req.body;
+      // const { nombre, direccion } = req.body;
 
-      const puntoActualizado = await PuntoService.actualizar(id, { nombre, direccion });
+      if (!id || id === 'undefined') {
+        return res.status(400).json({ error: 'El ID del punto es inválido o no fue provisto' });
+      }
+
+      const puntoActualizado = await PuntoService.actualizar(id, req.body);
+      // const puntoActualizado = await PuntoService.actualizar(id, { nombre, direccion });
       res.status(200).json(puntoActualizado);
     } catch (error) {
       console.error(error);
@@ -40,18 +45,21 @@ export class PuntoController {
   }
 
   static async crear(req: Request, res: Response) {
-      console.log("req.body: ", req.body) 
     try {
-      const { direccion, nombre } = req.body;
+      const esArray = Array.isArray(req.body);
+      const datosArray = esArray ? req.body : [req.body];
 
-      if (!direccion) {
-        return res.status(400).json({ error: 'La dirección es obligatoria' });
+      // Reutilizamos el servicio masivo para guardar todo
+      const nuevosPuntos = await PuntoService.crearMasivo(datosArray);
+
+      // Si mandó un objeto solo, devolvemos un objeto solo. Si mandó un array, devolvemos el array.
+      if (!esArray) {
+        return res.status(201).json(nuevosPuntos[0]);
       }
 
-      const nuevoPunto = await PuntoService.crear({ direccion, nombre });
-      res.status(201).json(nuevoPunto);
-    } catch (error) {
-      res.status(400).json({ error: 'Error al crear el punto (puede que la dirección ya exista)' });
+      res.status(201).json(nuevosPuntos);
+    } catch (error: any) {
+      res.status(400).json({ error: 'Error al crear el/los punto(s)', detalle: error.message });
     }
   }
 

@@ -6,10 +6,9 @@ export class UsuarioController {
     static async actualizar(req: Request, res: Response) {
       try {
         const id = req.params.id as string;
-        const { nombre, email, password } = req.body;
-
-        const usuarioActualizado = await UsuarioService.actualizar(id, { nombre, email, password });
         
+        const usuarioActualizado = await UsuarioService.actualizar(id, req.body);
+
         res.status(200).json(usuarioActualizado);
       } catch (error) {
         console.error(error);
@@ -71,12 +70,13 @@ export class UsuarioController {
       }
     }
 
-    static async obtenerTodos(req: Request, res: Response) {
+  static async obtenerTodos(req: Request, res: Response) {
     try {
       const usuarios = await UsuarioService.obtenerTodos();
       res.json(usuarios);
-    } catch (error) {
-      res.status(500).json({ error: 'Error al obtener usuarios' });
+    } catch (error: any) {
+      console.error('❌ Error en obtenerTodos:', error); // 👈 Agregado
+      res.status(500).json({ error: 'Error al obtener usuarios', detalle: error.message });
     }
   }
 
@@ -84,8 +84,9 @@ export class UsuarioController {
     try {
       const nuevoUsuario = await UsuarioService.crear(req.body);
       res.status(201).json(nuevoUsuario);
-    } catch (error) {
-      res.status(400).json({ error: 'Error al crear usuario' });
+    } catch (error: any) {
+      console.error('❌ Error en crear:', error); // 👈 Agregado
+      res.status(400).json({ error: 'Error al crear usuario', detalle: error.message });
     }
   }
 
@@ -98,8 +99,9 @@ export class UsuarioController {
 
       await UsuarioService.eliminar(id);
       res.json({ message: 'Usuario eliminado correctamente' });
-    } catch (error) {
-      res.status(400).json({ error: 'Error al eliminar usuario' });
+    } catch (error: any) {
+      console.error('❌ Error en eliminar:', error); // 👈 Agregado
+      res.status(400).json({ error: 'Error al eliminar usuario', detalle: error.message });
     }
   }
 }

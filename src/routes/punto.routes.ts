@@ -4,30 +4,32 @@ import { autenticarToken } from '../middlewares/auth.middleware.js';
 import { requerirRol } from '../middlewares/role.middleware.js';
 import { validarSchema } from '../middlewares/validarSchema.middleware.js';
 import { crearPuntoSchema, actualizarPuntoSchema } from '../schemas/punto.schema.js';
-import { Rol } from '@prisma/client';
 
 const router = Router();
 
 // Aplica autenticación a TODAS las rutas de abajo
-router.use(autenticarToken);
+///////////////////////////////////////////////////////////// COMENTADO PARA HACER PRUEBAS
+// router.use(autenticarToken);
 
 router.get('/', PuntoController.obtenerTodos);
 router.get('/:id', PuntoController.obtenerPorId);
 
 router.post(
   '/',
-  requerirRol(Rol.ADMIN),
+///////////////////////////////////////////////////////////// COMENTADO PARA HACER PRUEBAS
+//  requerirRol('ADMIN'), 
   validarSchema(crearPuntoSchema),
   PuntoController.crear
 );
 
 router.patch(
   '/:id',
-  requerirRol(Rol.ADMIN),
+ // autenticarToken,
+  //requerirRol('ADMIN'), 
   validarSchema(actualizarPuntoSchema),
   PuntoController.actualizar
 );
 
-router.delete('/:id', requerirRol(Rol.ADMIN), PuntoController.eliminar);
+router.delete('/:id', requerirRol('ADMIN'), PuntoController.eliminar); // ✅ Cambiado de Rol.ADMIN a string plano
 
 export default router;

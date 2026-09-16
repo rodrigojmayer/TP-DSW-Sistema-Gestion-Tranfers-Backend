@@ -1,43 +1,48 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../lib/prisma.js';
+import { getEM } from '../lib/db.js';
+import { Usuario } from '../entities/Usuario.entity.js';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
 export class AuthService {
   static async login(identificador: string, passwordPlana: string) {
-    // 1. Buscamos al usuario por su email O por su nombre de usuario
-    const usuario = await prisma.usuario.findFirst({
-      where: {
-        OR: [
-          { email: identificador },
-          { usuario: identificador }
-        ]
-      }
-    });
+    const JWT_SECRET = process.env.JWT_SECRET;
+
+    if (!JWT_SECRET) {
+      throw new Error('secretOrPrivateKey must have a value');
+    }
+
+    const em = getEM();
+
+    // Casteamos el filtro a 'any' para permitir la consulta flexible con $or
+    const usuario = await em.findOne(Usuario, {
+      $or: [
+        { usuario: identificador }
+      ]
+    } as any);
 
     // Si no existe el usuario
     if (!usuario) {
       throw new Error('Credenciales inválidas');
     }
 
-    // 2. Comparamos la contraseña en texto plano con el hash de la BD
+    // Comparamos la contraseña en texto plano con el hash de la BD
     const esPasswordValida = await bcrypt.compare(passwordPlana, usuario.password);
 
     if (!esPasswordValida) {
       throw new Error('Credenciales inválidas');
     }
 
-    // 3. Generamos el Token JWT firmado (expira en 8 horas)
+    // Generamos el Token JWT firmado (expira en 8 horas)
     const token = jwt.sign(
       { 
-        idUsuario: usuario.idUsuario, 
+        idUsuario: usuario.id, 
         rol: usuario.rol 
       },
       JWT_SECRET,
       { expiresIn: '8h' }
     );
 
-    // 4. Retornamos los datos del usuario (sin el hash) y el token
+    // Retornamos los datos del usuario (sin el hash) y el token
     const { password, ...usuarioSinPassword } = usuario;
 
     return {

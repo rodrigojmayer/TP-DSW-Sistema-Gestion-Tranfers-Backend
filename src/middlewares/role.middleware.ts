@@ -1,15 +1,13 @@
 import { Response, NextFunction } from 'express';
-import { Rol } from '@prisma/client';
 import { RequestConUsuario } from './auth.middleware.js';
 
-export const requerirRol = (...rolesPermitidos: Rol[]) => {
+export const requerirRol = (...rolesPermitidos: string[]) => {
   return (req: RequestConUsuario, res: Response, next: NextFunction) => {
     if (!req.usuario) {
       return res.status(401).json({ error: 'Usuario no autenticado' });
     }
 
-    // Convertimos el string a tipo Rol para validar contra los permitidos
-    const rolUsuario = req.usuario.rol as Rol;
+    const rolUsuario = req.usuario.rol;
 
     if (!rolesPermitidos.includes(rolUsuario)) {
       return res.status(403).json({ 

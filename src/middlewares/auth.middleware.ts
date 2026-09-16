@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+// const JWT_SECRET = process.env.JWT_SECRET!;
 
 // Extendemos la interfaz Request de Express para guardar los datos del usuario autenticado
 export interface RequestConUsuario extends Request {
@@ -12,6 +12,12 @@ export interface RequestConUsuario extends Request {
 }
 
 export const autenticarToken = (req: RequestConUsuario, res: Response, next: NextFunction) => {
+  const JWT_SECRET = process.env.JWT_SECRET;
+
+  if (!JWT_SECRET) {
+    return res.status(500).json({ error: 'Error de configuración: JWT_SECRET no está definido' });
+  }
+  
   const authHeader = req.headers['authorization'];
   // El token viene habitualmente con el formato: "Bearer <TOKEN>"
   const token = authHeader && authHeader.split(' ')[1];

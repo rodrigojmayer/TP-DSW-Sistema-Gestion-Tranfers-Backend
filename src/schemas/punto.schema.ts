@@ -1,17 +1,22 @@
 import { z } from 'zod';
 
-export const crearPuntoSchema = z.object({
+const puntoUnicoSchema = z.object({
   nombre: z
     .string({ message: 'El nombre del punto es obligatorio' })
     .min(2, 'El nombre debe tener al menos 2 caracteres'),
+  tipo: z.string({ message: "El tipo es obligatorio" }),
   latitud: z
-    .number({ message: 'La latitud debe ser un número' })
-    .min(-90, 'La latitud mínima es -90')
-    .max(90, 'La latitud máxima es 90'),
+    .string({ message: 'La latitud es obligatoria' }),
   longitud: z
-    .number({ message: 'La longitud debe ser un número' })
-    .min(-180, 'La longitud mínima es -180')
-    .max(180, 'La longitud máxima es 180'),
+    .string({ message: 'La longitud es obligatoria' }),
+  direccion: z
+    .string({ message: 'La direccion es obligatoria' }),
 });
 
-export const actualizarPuntoSchema = crearPuntoSchema.partial();
+// Acepta un objeto suelto O un array de objetos
+export const crearPuntoSchema = z.union([
+  puntoUnicoSchema,
+  z.array(puntoUnicoSchema)
+]);
+
+export const actualizarPuntoSchema = puntoUnicoSchema.partial();

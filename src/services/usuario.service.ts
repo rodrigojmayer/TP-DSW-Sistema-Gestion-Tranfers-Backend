@@ -33,8 +33,11 @@ export class UsuarioService {
     nombre: string;
     apellido: string;
     email: string;
+    dni?: string;
     telefono?: string;
     rol?: string;
+    nroLicencia?: string;
+    vencimientoLicencia?: string;
   }) {
     const em = getEM();
     const hashedPassword = await bcrypt.hash(datos.password, 10);
@@ -59,8 +62,11 @@ export class UsuarioService {
       apellido?: string;
       email?: string;
       telefono?: string;
+      dni?: string
       rol?: string;
       password?: string;
+      nroLicencia?: string;
+      vencimientoLicencia?: string;
     }
   ) {
     const em = getEM();
@@ -71,7 +77,7 @@ export class UsuarioService {
     }
 
     const datosLimpios = Object.fromEntries(
-      Object.entries(data).filter(([_, v]) => v !== undefined)
+      Object.entries(data).filter(([_, v]) => v !== undefined && v !== '')
     );
 
     em.assign(usuario, datosLimpios as EntityData<Usuario>);

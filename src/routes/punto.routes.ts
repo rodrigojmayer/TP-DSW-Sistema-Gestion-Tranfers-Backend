@@ -30,6 +30,10 @@ router.patch(
   PuntoController.actualizar
 );
 
-router.delete('/:id', requerirRol('ADMIN'), PuntoController.eliminar); // ✅ Cambiado de Rol.ADMIN a string plano
+router.delete(
+  '/:id', 
+  // requerirRol('ADMIN'), 
+  PuntoController.eliminar
+); // ✅ Cambiado de Rol.ADMIN a string plano
 
 export default router;

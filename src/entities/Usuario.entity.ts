@@ -9,6 +9,11 @@ export class Usuario {
   email!: string;
   password!: string;
   rol: string = 'CLIENTE';
+  
+  dni?: string;
+  telefono?: string;
+  nroLicencia?: string;
+  vencimientoLicencia?: string;
 }
 
 export const UsuarioSchema = new EntitySchema<Usuario>({
@@ -17,10 +22,16 @@ export const UsuarioSchema = new EntitySchema<Usuario>({
   properties: {
     id: { type: 'uuid', primary: true },
     usuario: { type: 'string', unique: true },
-    nombre: { type: 'string'},
+    nombre: { type: 'string' },
     apellido: { type: 'string' },
     email: { type: 'string', unique: true },
     password: { type: 'string' },
     rol: { type: 'string', default: 'CLIENTE' },
+    
+    //opcionales
+    dni: { type: 'string', nullable: true },
+    telefono: { type: 'string', nullable: true },
+    nroLicencia: { type: 'string', nullable: true },
+    vencimientoLicencia: { type: 'string', nullable: true },
   },
 });

@@ -11,6 +11,7 @@ import { initORM } from './lib/db.js';
 // Importar rutas
 import usuarioRoutes from './routes/usuario.routes.js';
 import rutaRoutes from './routes/ruta.routes.js';
+import reservaRoutes from './routes/reserva.routes.js';
 import puntoRoutes from './routes/punto.routes.js';
 import authRoutes from './routes/auth.routes.js';
 
@@ -40,6 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/usuario', usuarioRoutes);
 app.use('/api/punto', puntoRoutes);
 app.use('/api/ruta', rutaRoutes);
+app.use('/api/reserva', reservaRoutes);
 
 // Función de arranque que conecta la DB y levanta el servidor
 async function bootstrap() {

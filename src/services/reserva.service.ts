@@ -1,5 +1,6 @@
 import { getEM } from '../lib/db.js';
 import { Reserva } from '../entities/Reserva.entity.js';
+import { Viaje, TipoViaje } from '../entities/Viaje.entity.js';
 
 export interface CrearReservaInput {
   idViaje: string;
@@ -18,14 +19,25 @@ export class ReservaService {
   static async crear(idUsuario: string, data: CrearReservaInput) {
     const em = getEM().fork();
 
-    // Nota: Cuando creemos la entidad Viaje, acá validaremos:
-    // 1. Si el viaje existe y está habilitado.
-    // 2. Si hay suficiente capacidad de pasajeros/valijas disponible.
-    // 3. Si el viaje es PRIVADO y ya tiene 1 reserva, rebotarlo.
+    // 1. Buscar el viaje con sus reservas asociadas
+    const viaje = await em.findOneOrFail(
+      Viaje,
+      { id: data.idViaje },
+      { populate: ['reservas'] }
+    );
 
+    // 2. Validar restricciones si el viaje es PRIVADO
+    if (viaje.tipo === TipoViaje.PRIVADO && viaje.reservas.length > 0) {
+      throw new Error('Este viaje privado ya cuenta con una reserva asignada');
+    }
+
+
+
+
+    // 5. Instanciar y guardar la nueva reserva
     const nuevaReserva = em.create(Reserva, {
-      usuario: idUsuario,
-      viaje: data.idViaje,
+      usuario: idUsuario as any,
+      viaje: viaje,
       origen: data.origen,
       destino: data.destino,
       cantPasajeros: data.cantPasajeros,
@@ -34,10 +46,10 @@ export class ReservaService {
       pagoAbonado: data.pagoAbonado ?? false,
       habilitado: data.habilitado ?? true,
     });
-    
-    em.persist(nuevaReserva); 
+
+    em.persist(nuevaReserva);
     await em.flush();
-    
+
     return await em.findOneOrFail(Reserva, nuevaReserva.id, {
       populate: ['usuario', 'viaje'],
     });
@@ -95,11 +107,11 @@ export class ReservaService {
 
   static async eliminar(id: string) {
     const em = getEM().fork();
-    const reserva = await em.findOneOrFail(Reserva, { id });
-    
+    const reserva = await em.findOneOrFail(Reserva, { id }, { populate: ['viaje'] });
+
     em.remove(reserva);
     await em.flush();
-    
+
     return true;
   }
 }

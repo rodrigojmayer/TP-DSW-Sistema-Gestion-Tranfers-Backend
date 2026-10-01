@@ -1,21 +1,42 @@
 import { Request, Response } from 'express';
 import { ReservaService } from '../services/reserva.service.js';
+import { UsuarioService } from '../services/usuario.service.js';
 
 export class ReservaController {
   static async crear(req: Request, res: Response) {
-    try {
-      const idUsuario = req.usuario?.idUsuario;
-      if (!idUsuario) {
-        return res.status(401).json({ error: 'Usuario no autenticado' });
+  try {
+    // Si viene autenticado toma su ID, si es invitado usa un ID/usuario por defecto o null
+    let idUsuario = req.usuario?.idUsuario;
+
+    if (!idUsuario) {
+      const { pasajeroNombre, pasajeroApellido, pasajeroDni, pasajeroEmail, pasajeroTelefono } = req.body;
+
+      if (!pasajeroEmail || !pasajeroDni) {
+        return res.status(400).json({
+          error: 'El Email y DNI son requeridos para procesar la reserva express',
+        });
       }
 
-      const nuevaReserva = await ReservaService.crear(idUsuario, req.body);
-      return res.status(201).json(nuevaReserva);
-    } catch (error: any) {
-      console.error(error);
-      return res.status(400).json({ error: error.message || 'Error al crear la reserva' });
+      // Buscar por Email/DNI o crear usuario invitado sin contraseña
+      const usuarioInvitado = await UsuarioService.obtenerOCrearInvitado({
+        nombre: pasajeroNombre,
+        apellido: pasajeroApellido,
+        dni: pasajeroDni,
+        email: pasajeroEmail,
+        telefono: pasajeroTelefono,
+      });
+
+      idUsuario = usuarioInvitado.id;
     }
+
+    const nuevaReserva = await ReservaService.crear(idUsuario, req.body);
+    return res.status(201).json(nuevaReserva);
+  } catch (error: unknown) {
+    console.error(error);
+    const errMessage = error instanceof Error ? error.message : 'Error al crear la reserva';
+    return res.status(400).json({ error: errMessage });
   }
+}
 
   static async obtenerTodas(req: Request, res: Response) {
     try {
@@ -47,6 +68,17 @@ export class ReservaController {
     }
   }
 
+  static async obtenerPorCliente(req: Request, res: Response) {
+    try {
+      const idCliente = String(req.params.idCliente);
+      const reservas = await ReservaService.obtenerPorUsuario(idCliente);
+      return res.json(reservas);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Error al obtener las reservas del cliente' });
+    }
+  }
+
   static async actualizar(req: Request, res: Response) {
     try {
       const id = String(req.params.id);
@@ -62,7 +94,7 @@ export class ReservaController {
     try {
       const id = String(req.params.id);
       await ReservaService.eliminar(id);
-      return res.status(204).send();
+      return res.status(200).json({ mensaje: 'Reserva eliminada con éxito', id });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: 'Error al eliminar la reserva' });

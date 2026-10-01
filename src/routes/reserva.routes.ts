@@ -1,17 +1,20 @@
 import { Router } from 'express';
 import { ReservaController } from '../controllers/reserva.controller.js';
-import { autenticarToken } from '../middlewares/auth.middleware.js';
+import { autenticarToken, autenticarTokenOpcional } from '../middlewares/auth.middleware.js';
 import { validarSchema } from '../middlewares/validarSchema.middleware.js';
 import { crearReservaSchema, actualizarReservaSchema } from '../schemas/reserva.schema.js';
 
 const router = Router();
 
-router.use(autenticarToken);
+// 1. RUTA PÚBLICA / EXPRES: Permite a invitados crear una reserva sin token
+router.post('/', autenticarTokenOpcional, validarSchema(crearReservaSchema), ReservaController.crear);
 
-router.get('/', ReservaController.obtenerTodas);
-router.get('/:id', ReservaController.obtenerPorId);
-router.post('/', validarSchema(crearReservaSchema), ReservaController.crear);
-router.patch('/:id', validarSchema(actualizarReservaSchema), ReservaController.actualizar);
-router.delete('/:id', ReservaController.eliminar);
+// 2. RUTAS PROTEGIDAS: Consultar, modificar o eliminar reservas requiere sesión
+router.get('/', autenticarToken, ReservaController.obtenerTodas);
+router.get('/cliente/:idCliente',autenticarToken, ReservaController.obtenerPorCliente);
+
+router.get('/:id', autenticarToken, ReservaController.obtenerPorId);
+router.patch('/:id', autenticarToken, validarSchema(actualizarReservaSchema), ReservaController.actualizar);
+router.delete('/:id', autenticarToken, ReservaController.eliminar);
 
 export default router;

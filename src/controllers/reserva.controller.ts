@@ -79,6 +79,38 @@ export class ReservaController {
     }
   }
 
+  static async obtenerPorViaje(req: Request, res: Response) {
+    try {
+      const idViaje = String(req.params.idViaje);
+      const reservas = await ReservaService.obtenerPorViaje(idViaje);
+      return res.json(reservas);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Error al obtener las reservas del viaje' });
+    }
+  }
+
+  static async obtenerOcupacionPublica(req: Request, res: Response) {
+    try {
+      const idViaje = String(req.params.idViaje);
+      const reservas = await ReservaService.obtenerPorViaje(idViaje);
+
+      // Mapeamos únicamente las propiedades necesarias para el cálculo visual en el frontend
+      const ocupacionAnonima = reservas.map((r: any) => ({
+        id: r.id,
+        origen: r.origen,
+        destino: r.destino,
+        cantPasajeros: r.cantPasajeros || r.asiento || 1,
+        cantValijas: r.cantValijas || 0,
+      }));
+
+      return res.json(ocupacionAnonima);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Error al obtener la ocupación del viaje' });
+    }
+  }
+
   static async actualizar(req: Request, res: Response) {
     try {
       const id = String(req.params.id);

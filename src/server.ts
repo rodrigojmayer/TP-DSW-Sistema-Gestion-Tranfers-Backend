@@ -14,6 +14,7 @@ import rutaRoutes from './routes/ruta.routes.js';
 import reservaRoutes from './routes/reserva.routes.js';
 import puntoRoutes from './routes/punto.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import viajeRoutes from './routes/viaje.routes.js';
 
 const app = express();
 const PORT = process.env['PORT'] || 3000;
@@ -42,6 +43,7 @@ app.use('/api/usuario', usuarioRoutes);
 app.use('/api/punto', puntoRoutes);
 app.use('/api/ruta', rutaRoutes);
 app.use('/api/reserva', reservaRoutes);
+app.use('/api/viaje', viajeRoutes);
 
 // Función de arranque que conecta la DB y levanta el servidor
 async function bootstrap() {

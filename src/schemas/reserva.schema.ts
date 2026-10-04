@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 // 1. Objeto base sin refinamientos (aquí SÍ se puede usar .partial())
 const reservaShape = z.object({
-  // Identificador del viaje obligatorios
-  idViaje: z.string().uuid({ message: 'El idViaje debe ser un UUID válido' }),
+  // Identificador del viaje: Hacemos opcional/permitimos string vacío para cuando sea PRIVADO
+  idViaje: z.string().optional().or(z.literal('')),
 
   // Modalidad del viaje
   tipoViaje: z.enum(['COMPARTIDO', 'PRIVADO'] as const, {
@@ -39,14 +39,28 @@ const reservaShape = z.object({
   habilitado: z.boolean().optional().default(true),
 });
 
-// 2. Esquema de creación (Objeto base + Refinamiento)
-export const crearReservaSchema = reservaShape.refine(
-  data => data.precio !== undefined || data.precioFinal !== undefined, 
-  {
-    message: 'Debe proporcionar al menos el precio o precioFinal',
-    path: ['precioFinal'],
-  }
-);
+// 2. Esquema de creación (Objeto base + Refinamientos)
+export const crearReservaSchema = reservaShape
+  .refine(
+    data => data.precio !== undefined || data.precioFinal !== undefined, 
+    {
+      message: 'Debe proporcionar al menos el precio o precioFinal',
+      path: ['precioFinal'],
+    }
+  )
+  .refine(
+    data => {
+      // Si el viaje es COMPARTIDO, exigimos que idViaje exista y no esté vacío
+      if (data.tipoViaje === 'COMPARTIDO') {
+        return !!data.idViaje && data.idViaje.trim() !== '';
+      }
+      return true; // Si es PRIVADO, no exige idViaje
+    },
+    {
+      message: 'Debe seleccionar un viaje programado',
+      path: ['idViaje'],
+    }
+  );
 
-// 3. Esquema de actualización (Parcial directo sobre la estructura sin refinamiento)
+// 3. Esquema de actualización
 export const actualizarReservaSchema = reservaShape.partial();

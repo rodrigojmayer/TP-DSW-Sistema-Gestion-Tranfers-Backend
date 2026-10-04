@@ -86,6 +86,18 @@ export class ReservaService {
     });
   }
 
+  static async obtenerPorViaje(idViaje: string) {
+    const em = getEM().fork();
+    return await em.find(
+      Reserva,
+      { viaje: idViaje },
+      {
+        populate: ['usuario', 'viaje'],
+        orderBy: { createdAt: 'desc' },
+      }
+    );
+  }
+
   static async actualizar(id: string, data: ActualizarReservaInput) {
     const em = getEM().fork();
     const reserva = await em.findOneOrFail(Reserva, { id });

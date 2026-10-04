@@ -7,33 +7,32 @@ import { crearPuntoSchema, actualizarPuntoSchema } from '../schemas/punto.schema
 
 const router = Router();
 
-// Aplica autenticación a TODAS las rutas de abajo
-///////////////////////////////////////////////////////////// COMENTADO PARA HACER PRUEBAS
-// router.use(autenticarToken);
-
+// 1. RUTAS PÚBLICAS: Cualquiera puede listar puntos
 router.get('/', PuntoController.obtenerTodos);
 router.get('/:id', PuntoController.obtenerPorId);
 
+// 2. RUTAS PROTEGIDAS: Permitir acceso a ADMIN y OPERADOR
 router.post(
   '/',
-///////////////////////////////////////////////////////////// COMENTADO PARA HACER PRUEBAS
-//  requerirRol('ADMIN'), 
+  autenticarToken,
+  requerirRol(['ADMIN', 'OPERADOR']), // 👈 Permitir ambos roles
   validarSchema(crearPuntoSchema),
   PuntoController.crear
 );
 
 router.patch(
   '/:id',
- // autenticarToken,
-  //requerirRol('ADMIN'), 
+  autenticarToken,
+  requerirRol(['ADMIN', 'OPERADOR']), // 👈 Permitir ambos roles
   validarSchema(actualizarPuntoSchema),
   PuntoController.actualizar
 );
 
 router.delete(
-  '/:id', 
-  // requerirRol('ADMIN'), 
+  '/:id',
+  autenticarToken,
+  requerirRol(['ADMIN', 'OPERADOR']), // 👈 Permitir ambos roles
   PuntoController.eliminar
-); // ✅ Cambiado de Rol.ADMIN a string plano
+);
 
 export default router;

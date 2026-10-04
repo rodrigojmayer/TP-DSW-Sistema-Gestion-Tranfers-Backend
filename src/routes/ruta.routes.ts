@@ -5,34 +5,31 @@ import { requerirRol } from '../middlewares/role.middleware.js';
 
 const router = Router();
 
+// Crear ruta: Permitido para ADMIN y OPERADOR
 router.post(
-    '/', 
-    // autenticarToken, 
-    // requerirRol('ADMIN'), 
-    RutaController.crear
+  '/', 
+  autenticarToken, 
+  requerirRol(['ADMIN', 'OPERADOR']), 
+  RutaController.crear
 );
-router.get(
-    '/', 
-    // autenticarToken, 
-    RutaController.obtenerTodas
-);
-router.get(
-    '/:id', 
-    // autenticarToken, 
-    RutaController.obtenerPorId
 
-);
+// Consultar rutas: Lectura para cualquier usuario autenticado
+router.get('/', RutaController.obtenerTodas);
+router.get('/:id', RutaController.obtenerPorId);
+
+// Modificar o eliminar rutas: Permitido para ADMIN y OPERADOR
 router.patch(
-    '/:id', 
-    // autenticarToken, 
-    // requerirRol('ADMIN'), 
-    RutaController.actualizar
+  '/:id', 
+  autenticarToken, 
+  requerirRol(['ADMIN', 'OPERADOR']), 
+  RutaController.actualizar
 );
+
 router.delete(
-    '/:id', 
-    // autenticarToken, 
-    // requerirRol('ADMIN'), 
-    RutaController.eliminar
+  '/:id', 
+  autenticarToken, 
+  requerirRol(['ADMIN', 'OPERADOR']), 
+  RutaController.eliminar
 );
 
 export default router;

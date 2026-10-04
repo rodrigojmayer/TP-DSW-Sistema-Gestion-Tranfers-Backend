@@ -3,10 +3,12 @@ import { ReservaController } from '../controllers/reserva.controller.js';
 import { autenticarToken, autenticarTokenOpcional } from '../middlewares/auth.middleware.js';
 import { validarSchema } from '../middlewares/validarSchema.middleware.js';
 import { crearReservaSchema, actualizarReservaSchema } from '../schemas/reserva.schema.js';
+import { crearReservaPrivadaSchema } from '../schemas/reservaPrivada.schema.js';
 
 const router = Router();
 
 // 1. RUTA PÚBLICA / EXPRES: Permite a invitados crear una reserva sin token
+router.post('/privada', autenticarTokenOpcional, validarSchema(crearReservaPrivadaSchema), ReservaController.crearReservaPrivada);
 router.post('/', autenticarTokenOpcional, validarSchema(crearReservaSchema), ReservaController.crear);
 
 // RUTA PÚBLICA ANÓNIMA: Solo devuelve origen, destino y cantidad de pasajeros/valijas para hacer los cálculos

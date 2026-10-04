@@ -4,39 +4,78 @@ import { UsuarioService } from '../services/usuario.service.js';
 
 export class ReservaController {
   static async crear(req: Request, res: Response) {
-  try {
-    // Si viene autenticado toma su ID, si es invitado usa un ID/usuario por defecto o null
-    let idUsuario = req.usuario?.idUsuario;
+    try {
+      // Si viene autenticado toma su ID, si es invitado usa un ID/usuario por defecto o null
+      let idUsuario = req.usuario?.idUsuario;
 
-    if (!idUsuario) {
-      const { pasajeroNombre, pasajeroApellido, pasajeroDni, pasajeroEmail, pasajeroTelefono } = req.body;
+      if (!idUsuario) {
+        const { pasajeroNombre, pasajeroApellido, pasajeroDni, pasajeroEmail, pasajeroTelefono } = req.body;
 
-      if (!pasajeroEmail || !pasajeroDni) {
-        return res.status(400).json({
-          error: 'El Email y DNI son requeridos para procesar la reserva express',
+        if (!pasajeroEmail || !pasajeroDni) {
+          return res.status(400).json({
+            error: 'El Email y DNI son requeridos para procesar la reserva express',
+          });
+        }
+
+        // Buscar por Email/DNI o crear usuario invitado sin contraseña
+        const usuarioInvitado = await UsuarioService.obtenerOCrearInvitado({
+          nombre: pasajeroNombre,
+          apellido: pasajeroApellido,
+          dni: pasajeroDni,
+          email: pasajeroEmail,
+          telefono: pasajeroTelefono,
         });
+
+        idUsuario = usuarioInvitado.id;
       }
 
-      // Buscar por Email/DNI o crear usuario invitado sin contraseña
-      const usuarioInvitado = await UsuarioService.obtenerOCrearInvitado({
-        nombre: pasajeroNombre,
-        apellido: pasajeroApellido,
-        dni: pasajeroDni,
-        email: pasajeroEmail,
-        telefono: pasajeroTelefono,
+      const nuevaReserva = await ReservaService.crear(idUsuario, req.body);
+      return res.status(201).json(nuevaReserva);
+    } catch (error: unknown) {
+      console.error(error);
+      const errMessage = error instanceof Error ? error.message : 'Error al crear la reserva';
+      return res.status(400).json({ error: errMessage });
+    }
+  }
+
+  static async crearReservaPrivada(req: Request, res: Response) {
+    try {
+      let idUsuario = req.usuario?.idUsuario;
+
+      // Si el usuario no está autenticado, procesamos los datos del invitado
+      if (!idUsuario) {
+        const { pasajeroNombre, pasajeroApellido, pasajeroDni, pasajeroEmail, pasajeroTelefono } = req.body;
+
+        if (!pasajeroEmail || !pasajeroDni) {
+          return res.status(400).json({
+            error: 'El Email y DNI son requeridos para procesar la reserva privada',
+          });
+        }
+
+        const usuarioInvitado = await UsuarioService.obtenerOCrearInvitado({
+          nombre: pasajeroNombre,
+          apellido: pasajeroApellido,
+          dni: pasajeroDni,
+          email: pasajeroEmail,
+          telefono: pasajeroTelefono,
+        });
+
+        idUsuario = usuarioInvitado.id;
+      }
+
+      // Invocamos el servicio pasando el idUsuario y el resto del body
+      const nuevaReserva = await ReservaService.crearReservaPrivada({
+        idUsuario,
+        ...req.body,
       });
 
-      idUsuario = usuarioInvitado.id;
+      return res.status(201).json(nuevaReserva);
+    } catch (error: unknown) {
+      console.error(error);
+      const errMessage = error instanceof Error ? error.message : 'Error al crear la reserva privada';
+      return res.status(400).json({ error: errMessage });
     }
-
-    const nuevaReserva = await ReservaService.crear(idUsuario, req.body);
-    return res.status(201).json(nuevaReserva);
-  } catch (error: unknown) {
-    console.error(error);
-    const errMessage = error instanceof Error ? error.message : 'Error al crear la reserva';
-    return res.status(400).json({ error: errMessage });
   }
-}
 
   static async obtenerTodas(req: Request, res: Response) {
     try {

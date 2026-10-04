@@ -11,6 +11,7 @@ export const crearUsuarioBackendSchema = z.object({
   dni: z.string().min(6).max(8).optional(),
   telefono: z.string().optional(),
   rol: z.enum(ROLES).default('CLIENTE'),
+  habilitado: z.boolean().optional(), 
   nroLicencia: z.string().optional(),
   vencimientoLicencia: z.string().optional(),
 });

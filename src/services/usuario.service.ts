@@ -1,9 +1,47 @@
 import bcrypt from 'bcryptjs';
 import { wrap, EntityData } from '@mikro-orm/core';
 import { getEM } from '../lib/db.js';
-import { Usuario } from '../entities/Usuario.entity.js';
+import { Usuario, Rol } from '../entities/Usuario.entity.js';
+
+export interface CrearInvitadoInput {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  email: string;
+  telefono?: string;
+}
 
 export class UsuarioService {
+  static async obtenerOCrearInvitado(datos: CrearInvitadoInput) {
+    const em = getEM().fork();
+
+    // 1. Buscar si ya existe un usuario con ese email o DNI
+    let usuario = await em.findOne(Usuario, {
+      $or: [{ email: datos.email }, { dni: datos.dni }],
+    });
+
+    // 2. Si no existe, creamos el usuario invitado sin contraseña
+    if (!usuario) {
+      usuario = em.create(Usuario, {
+        usuario: datos.email, // El username puede ser el propio email
+        nombre: datos.nombre,
+        apellido: datos.apellido,
+        dni: datos.dni,
+        email: datos.email,
+        telefono: datos.telefono || '',
+        password: null, // Sin contraseña asignada
+        rol: Rol.CLIENTE,
+        esInvitado: true,
+        habilitado: true,
+      });
+
+      em.persist(usuario);
+      await em.flush();
+    }
+
+    return usuario;
+  }
+  
   static async obtenerTodos() {
     const em = getEM();
     const usuarios = await em.find(Usuario, {});
@@ -35,16 +73,26 @@ export class UsuarioService {
     email: string;
     dni?: string;
     telefono?: string;
-    rol?: string;
+    rol?: Rol | string;
+    habilitado?: boolean;
     nroLicencia?: string;
     vencimientoLicencia?: string;
   }) {
     const em = getEM();
     const hashedPassword = await bcrypt.hash(datos.password, 10);
 
+    // Si el rol es OPERADOR o CHOFER, se deshabilita por defecto (false)
+    const rolAsignado = datos.rol || Rol.CLIENTE;
+    const esRolRestringido = rolAsignado === Rol.OPERADOR || rolAsignado === Rol.CHOFER;
+    
+    // Si viene explícitamente el valor de habilitado se respeta; de lo contrario, aplica la regla por rol
+    const estadoHabilitado = datos.habilitado !== undefined ? datos.habilitado : !esRolRestringido;
+
     const nuevoUsuario = em.create(Usuario, {
       ...datos,
+      rol: rolAsignado,
       password: hashedPassword,
+      habilitado: estadoHabilitado,
     } as any);
 
     em.persist(nuevoUsuario);
@@ -62,8 +110,9 @@ export class UsuarioService {
       apellido?: string;
       email?: string;
       telefono?: string;
-      dni?: string
-      rol?: string;
+      dni?: string;
+      rol?: Rol | string;
+      habilitado?: boolean;
       password?: string;
       nroLicencia?: string;
       vencimientoLicencia?: string;

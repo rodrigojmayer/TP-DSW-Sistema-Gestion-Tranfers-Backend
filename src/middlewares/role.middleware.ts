@@ -1,18 +1,18 @@
-import { Response, NextFunction } from 'express';
-import { RequestConUsuario } from './auth.middleware.js';
+import { Request, Response, NextFunction } from 'express';
 
-export const requerirRol = (...rolesPermitidos: string[]) => {
-  return (req: RequestConUsuario, res: Response, next: NextFunction) => {
-    if (!req.usuario) {
+export const requerirRol = (rolesPermitidos: string | string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const rolUsuario = req.usuario?.rol;
+
+    if (!rolUsuario) {
       return res.status(401).json({ error: 'Usuario no autenticado' });
     }
 
-    const rolUsuario = req.usuario.rol;
+    // Normalizar a un arreglo
+    const roles = Array.isArray(rolesPermitidos) ? rolesPermitidos : [rolesPermitidos];
 
-    if (!rolesPermitidos.includes(rolUsuario)) {
-      return res.status(403).json({ 
-        error: `Acceso denegado: Se requiere alguno de los siguientes roles [${rolesPermitidos.join(', ')}]` 
-      });
+    if (!roles.includes(rolUsuario)) {
+      return res.status(403).json({ error: 'No tienes permisos suficientes para realizar esta acción' });
     }
 
     next();

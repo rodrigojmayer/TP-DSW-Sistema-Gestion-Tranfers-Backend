@@ -3,79 +3,87 @@ import { RequestConUsuario } from '../middlewares/auth.middleware.js';
 import { UsuarioService } from '../services/usuario.service.js';
 
 export class UsuarioController {
-    static async actualizar(req: Request, res: Response) {
-      try {
-        const id = req.params.id as string;
-        
-        const usuarioActualizado = await UsuarioService.actualizar(id, req.body);
+  static async actualizar(req: RequestConUsuario, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const datos = { ...req.body };
 
-        res.status(200).json(usuarioActualizado);
-      } catch (error) {
-        console.error(error);
-        res.status(400).json({ 
-          error: 'Error al actualizar el usuario (verificá que el ID exista o que el email no esté duplicado)' 
-        });
+      //  Si el usuario autenticado NO es ADMIN, eliminamos 'habilitado'
+      if (req.usuario?.rol !== 'ADMIN') {
+        delete datos.habilitado;
       }
-    }
-    
-    static async actualizarMiPerfil(req: RequestConUsuario, res: Response) {
-      try {
-        const idUsuario = req.usuario?.idUsuario;
-        if (!idUsuario) {
-          return res.status(401).json({ error: 'Usuario no autenticado' });
-        }
 
-        // Actualizas usando tu servicio de actualización existente pasándole el idUsuario del token
-        const usuarioActualizado = await UsuarioService.actualizar(idUsuario, req.body);
-        return res.json(usuarioActualizado);
-      } catch (error: any) {
-        return res.status(400).json({ error: error.message || 'Error al actualizar el perfil' });
+      const usuarioActualizado = await UsuarioService.actualizar(id, datos);
+      res.status(200).json(usuarioActualizado);
+    } catch (error) {
+      console.error(error);
+      res.status(400).json({ 
+        error: 'Error al actualizar el usuario (verificá que el ID exista o que el email no esté duplicado)' 
+      });
+    }
+  }
+
+  static async actualizarMiPerfil(req: RequestConUsuario, res: Response) {
+    try {
+      const idUsuario = req.usuario?.idUsuario;
+      if (!idUsuario) {
+        return res.status(401).json({ error: 'Usuario no autenticado' });
       }
+
+      const datos = { ...req.body };
+      
+      //  Prevenir que un usuario común se auto-habilite al actualizar su propio perfil
+      delete datos.habilitado;
+
+      const usuarioActualizado = await UsuarioService.actualizar(idUsuario, datos);
+      return res.json(usuarioActualizado);
+    } catch (error: any) {
+      return res.status(400).json({ error: error.message || 'Error al actualizar el perfil' });
     }
+  }
 
-    static async obtenerPorId(req: Request, res: Response) {
-      try {
-        const id = req.params.id as string;
-        const usuario = await UsuarioService.obtenerPorId(id);
+  static async obtenerPorId(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const usuario = await UsuarioService.obtenerPorId(id);
 
-        if (!usuario) {
-          return res.status(404).json({ error: 'Usuario no encontrado' });
-        }
-
-        res.status(200).json(usuario);
-      } catch (error) {
-        console.error(error);
-        res.status(400).json({ error: 'Error al buscar el usuario' });
+      if (!usuario) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
       }
+
+      res.status(200).json(usuario);
+    } catch (error) {
+      console.error(error);
+      res.status(400).json({ error: 'Error al buscar el usuario' });
     }
-    static async obtenerMiPerfil(req: RequestConUsuario, res: Response) {
-      try {
-        // Tomamos el idUsuario que guardó el middleware autenticarToken
-        const idUsuario = req.usuario?.idUsuario;
+  }
 
-        if (!idUsuario) {
-          return res.status(401).json({ error: 'Usuario no autenticado' });
-        }
+  static async obtenerMiPerfil(req: RequestConUsuario, res: Response) {
+    try {
+      const idUsuario = req.usuario?.idUsuario;
 
-        // 💥 Reutilizamos tu servicio exacto
-        const usuario = await UsuarioService.obtenerPorId(idUsuario);
-
-        if (!usuario) {
-          return res.status(404).json({ error: 'Usuario no encontrado' });
-        }
-
-        return res.json(usuario);
-      } catch (error: any) {
-        return res.status(500).json({ error: 'Error al obtener el perfil' });
+      if (!idUsuario) {
+        return res.status(401).json({ error: 'Usuario no autenticado' });
       }
+
+      const usuario = await UsuarioService.obtenerPorId(idUsuario);
+
+      if (!usuario) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+
+      return res.json(usuario);
+    } catch (error: any) {
+      return res.status(500).json({ error: 'Error al obtener el perfil' });
     }
+  }
 
   static async obtenerTodos(req: Request, res: Response) {
     try {
       const usuarios = await UsuarioService.obtenerTodos();
       res.json(usuarios);
     } catch (error: any) {
-      console.error('❌ Error en obtenerTodos:', error); // 👈 Agregado
+      console.error('❌ Error en obtenerTodos:', error);
       res.status(500).json({ error: 'Error al obtener usuarios', detalle: error.message });
     }
   }
@@ -85,7 +93,7 @@ export class UsuarioController {
       const nuevoUsuario = await UsuarioService.crear(req.body);
       res.status(201).json(nuevoUsuario);
     } catch (error: any) {
-      console.error('❌ Error en crear:', error); // 👈 Agregado
+      console.error('❌ Error en crear:', error);
       res.status(400).json({ error: 'Error al crear usuario', detalle: error.message });
     }
   }
@@ -100,7 +108,7 @@ export class UsuarioController {
       await UsuarioService.eliminar(id);
       res.json({ message: 'Usuario eliminado correctamente' });
     } catch (error: any) {
-      console.error('❌ Error en eliminar:', error); // 👈 Agregado
+      console.error('❌ Error en eliminar:', error);
       res.status(400).json({ error: 'Error al eliminar usuario', detalle: error.message });
     }
   }

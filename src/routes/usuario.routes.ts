@@ -5,42 +5,39 @@ import { requerirRol } from '../middlewares/role.middleware.js';
 
 const router = Router();
 
-// Ruta pública para registrarse
+// Ruta pública para registro inicial
 router.post(
     '/', 
     UsuarioController.crear
 );
 
-// Aplica autenticación a TODAS las rutas de abajo
+// Middleware de autenticación global para las siguientes rutas
 router.use(autenticarToken);
 
-// Excepción: Si el cliente quiere ver/editar SU PROPIO perfil, se crea un endpoint dedicado
+// Endpoints del perfil propio (cualquier usuario autenticado)
 router.get('/me', UsuarioController.obtenerMiPerfil); 
 router.patch('/me', UsuarioController.actualizarMiPerfil);
 
-// Solo el ADMIN puede ver la lista o consultar usuarios por ID
+// Endpoints exclusivos de ADMIN
 router.get(
     '/', 
     requerirRol('ADMIN'), 
     UsuarioController.obtenerTodos
 );
+
 router.get(
     '/:id', 
     requerirRol('ADMIN'), 
     UsuarioController.obtenerPorId
 );
 
-// Solo el ADMIN puede crear, editar o borrar usuarios
-router.post(
-    '/', 
-    requerirRol('ADMIN'), 
-    UsuarioController.crear
-);
+// Permite al ADMIN actualizar cualquier campo del usuario (incluido 'habilitado')
 router.patch(
     '/:id', 
     requerirRol('ADMIN'), 
     UsuarioController.actualizar
 );
+
 router.delete(
     '/:id', 
     requerirRol('ADMIN'), 

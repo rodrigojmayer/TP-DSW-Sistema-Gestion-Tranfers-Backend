@@ -1,25 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { Rol } from '../entities/Usuario.entity.js'; 
 
-// const JWT_SECRET = process.env.JWT_SECRET!;
-
-// Extendemos la interfaz Request de Express para guardar los datos del usuario autenticado
-export interface RequestConUsuario extends Request {
-  usuario?: {
-    idUsuario: string;
-    rol: string;
-  };
+// Interfaz para el Payload esperado al verificar el JWT
+interface JWTPayload {
+  idUsuario: string;
+  email: string;
+  rol: Rol;
 }
 
-export const autenticarToken = (req: RequestConUsuario, res: Response, next: NextFunction) => {
+export const autenticarToken = (req: Request, res: Response, next: NextFunction) => {
   const JWT_SECRET = process.env.JWT_SECRET;
 
   if (!JWT_SECRET) {
     return res.status(500).json({ error: 'Error de configuración: JWT_SECRET no está definido' });
   }
-  
+
   const authHeader = req.headers['authorization'];
-  // El token viene habitualmente con el formato: "Bearer <TOKEN>"
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
@@ -27,10 +24,32 @@ export const autenticarToken = (req: RequestConUsuario, res: Response, next: Nex
   }
 
   try {
-    const verificado = jwt.verify(token, JWT_SECRET) as { idUsuario: string; rol: string };
-    req.usuario = verificado; // Guardamos la info del token en la petición
-    next(); // Continuamos a la siguiente función/controlador
+    const verificado = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    req.usuario = verificado; // TypeScript lo reconoce automáticamente por express.d.ts
+    next();
   } catch (error) {
     return res.status(403).json({ error: 'Token inválido o expirado' });
   }
 };
+
+export const autenticarTokenOpcional = (req: Request, res: Response, next: NextFunction) => {
+  const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return next(); // Continúa como invitado (req.usuario será undefined)
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (!err && decoded) {
+      req.usuario = decoded as JWTPayload;
+    }
+    next();
+  });
+  
+};
+
+export interface RequestConUsuario extends Request {
+  usuario?: JWTPayload;
+}
